@@ -75,7 +75,7 @@ window.FORM_CONFIGS = {
 
       { key: "Race", type: "checkbox", opts: OPTS.RACE, label: "Which of the following do you identify with? (Darken ONE or more)" },
 
-      { qNum: "21", key: "SensitiveOptin", type: "radio", opts: OPTS.AB, label: "Encourage consent — by saying yes, you confirm the information is about you. (Darken ONE) A. Yes  B. No" }
+      { key: "SensitiveOptin", type: "radio", opts: OPTS.AB, label: "Encourage consent — by saying yes, you confirm the information is about you. (Darken ONE) A. Yes  B. No" }
     ]
   }
 };
@@ -93,12 +93,11 @@ window.createDefaultFormData = function (surveyType) {
     DeclaredName3: "", DeclaredState3: "", DeclaredVisit3: "",
     DeclaredName4: "", DeclaredState4: "", DeclaredVisit4: "",
     DeclaredName5: "", DeclaredState5: "", DeclaredVisit5: "",
-    Major: [], Denom: [],
+    Major: [], Denom: [], Expect: [],
     PartnerDefinedFieldFour: [], PartnerDefinedFieldFive: [],
     PartnerDefinedFieldSix: [], PartnerDefinedFieldSeven: [],
     PartnerDefinedFieldEight: [], PartnerDefinedFieldNine: []
   };
 };
-
 
 window.getFormConfig = function (t) { return FORM_CONFIGS[t] || FORM_CONFIGS.ACTFL; };

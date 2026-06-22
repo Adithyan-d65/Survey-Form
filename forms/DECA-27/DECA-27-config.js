@@ -95,13 +95,15 @@ window.FORM_CONFIGS = {
       { qNum:"12", key:"_stateTriple", type:"stateTriple", labels:["12A","12B","12C"] },
       { qNum:"13", key:"_collegeVisits", type:"collegeVisits", prefix:"13" },
       { qNum:"14", key:"_majorGrid",  type:"majorGrid", prefix:"14" },
-      { qNum:"15", key:"_expectGrid",  type:"expectGrid", prefix:"15" },
-      { qNum:"16", key:"Activity",   type:"denomGrid", opts:OPTS.DENOM,   label:"If you are interested in faith-based communities on campus or faith-based institutions, which two would you choose? (Darken up to TWO)" },
+      { qNum:"15", key:"_denomGrid",  type:"denomGrid", prefix:"15" },
+      { qNum:"16", key:"Activity",   type:"checkbox", opts:OPTS.ACTIVITY,   label:"(All that apply)" },
       { qNum:"17", key:"Race",       type:"checkbox", opts:OPTS.RACE,       label:"(All that apply)" },
       { qNum:"18", key:"_unused" },
       { qNum:"19", key:"SensitiveOptin", type:"radio", opts:OPTS.YN, label:"Do you consent to participate in sensitive surveys? (Y/N)" }
     ]
-  }
+  },
+
+
 };
 
 // ─── Default form data ────────────────────────────────────────────────────────
@@ -117,9 +119,11 @@ window.createDefaultFormData = function(surveyType) {
     DeclaredName3:"", DeclaredState3:"", DeclaredVisit3:"",
     DeclaredName4:"", DeclaredState4:"", DeclaredVisit4:"",
     DeclaredName5:"", DeclaredState5:"", DeclaredVisit5:"",
-    Major:[], Denom:[],
+    Major1:"", Major2:"", Major3:"",
+    Denom1:"", Denom2:"",
     SensitiveOptin:"",
     PartnerDefinedFieldFour:[],  PartnerDefinedFieldFive:[],
+    PartnerDefinedFieldFive_Performing:[], PartnerDefinedFieldFive_Visual:[],
     PartnerDefinedFieldSix:[],   PartnerDefinedFieldSeven:[]
   };
 };

@@ -1,6 +1,22 @@
 // form-handler.js  — hardened & fully fixed build
 
 // ═══════════════════════════════════════════════
+// CONFIGS INTERCEPTOR  (merges loaded form configurations instead of replacing)
+// ═══════════════════════════════════════════════
+const _masterFormConfigs = {};
+Object.defineProperty(window, "FORM_CONFIGS", {
+  get() {
+    return _masterFormConfigs;
+  },
+  set(val) {
+    if (val && typeof val === "object") {
+      Object.assign(_masterFormConfigs, val);
+    }
+  },
+  configurable: true
+});
+
+// ═══════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════
 let currentFormType = null;
@@ -9,6 +25,7 @@ let records = [];
 let editIndex = -1;
 let lastBulkKey = null;
 let _submitInProgress = false;   // race-condition guard
+let selectedRecordIndices = new Set();
 
 const DOM = {
   selectorMode: document.getElementById("selectorMode"),
@@ -264,6 +281,28 @@ function init() {
   });
 
   updateRecordsDisplay();
+
+  // Check if a form query parameter exists to load immediately (new tab feature)
+  const params = new URLSearchParams(window.location.search);
+  const formParam = params.get("form");
+  if (formParam) {
+    if (typeof TEMPLATE_CONFIG_MAP !== "undefined" && TEMPLATE_CONFIG_MAP[formParam]) {
+      if (DOM.formTypeSelect) {
+        DOM.formTypeSelect.value = formParam;
+        DOM.loadFormBtn.disabled = false;
+      }
+      if (DOM.backBtn) {
+        DOM.backBtn.style.display = "none";
+      }
+      if (typeof loadTemplateConfig === "function") {
+        loadTemplateConfig(formParam, function () {
+          _initFormAfterConfig(formParam);
+        });
+      } else {
+        _initFormAfterConfig(formParam);
+      }
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -273,17 +312,9 @@ function loadSelectedForm() {
   const t = DOM.formTypeSelect.value;
   if (!t) return;
 
-  // Dynamically load the per-template config file from its own folder,
-  // then boot the form once the script is ready.
-  // loadTemplateConfig() is defined in index.html's inline loader script.
-  if (typeof loadTemplateConfig === "function") {
-    loadTemplateConfig(t, function () {
-      _initFormAfterConfig(t);
-    });
-  } else {
-    // Fallback: config already on page (original single-file mode)
-    _initFormAfterConfig(t);
-  }
+  const url = new URL(window.location.href);
+  url.searchParams.set("form", t);
+  window.open(url.toString(), "_blank");
 }
 
 function _initFormAfterConfig(t) {
@@ -299,11 +330,24 @@ function _initFormAfterConfig(t) {
   renderForm();
   updateRecordsDisplay();
 
+  document.body.classList.add("form-active");
   DOM.selectorMode.classList.add("hidden");
   DOM.formMode.classList.remove("hidden");
 }
 
 function backToSelector() {
+  // Clear url query parameter to keep URL clean on going back
+  const url = new URL(window.location.href);
+  if (url.searchParams.has("form")) {
+    url.searchParams.delete("form");
+    window.history.replaceState({}, document.title, url.toString());
+  }
+
+  // Restore back button visibility
+  if (DOM.backBtn) {
+    DOM.backBtn.style.display = "";
+  }
+
   // Full reset so the next form loaded starts completely fresh
   currentFormType = null;
   formData = null;
@@ -317,6 +361,7 @@ function backToSelector() {
   DOM.clearBtn.style.display = "";
   DOM.downloadBtn.style.display = "";
   DOM.deleteAllBtn.style.display = "";
+  document.body.classList.remove("form-active");
   DOM.selectorMode.classList.remove("hidden");
   DOM.formMode.classList.add("hidden");
 }
@@ -327,6 +372,7 @@ function viewAllRecords() {
   currentFormType = null;
   formData = null;
   editIndex = -1;
+  selectedRecordIndices.clear();
 
   DOM.formTitle.textContent = "All Stored Records";
   DOM.formSubtitle.textContent = "2027 Academic Year Response Survey";
@@ -335,17 +381,141 @@ function viewAllRecords() {
   DOM.formFields.innerHTML = "";
   const info = document.createElement("p");
   info.style.cssText = "padding:12px 0;color:var(--text-secondary);font-size:14px;";
-  info.textContent = `${records.length} record(s) stored across all form types. Use the ⬇ Excel button on each row to download individually, or "Download Excel" to export all records.`;
+  info.textContent = `${records.length} record(s) stored across all form types. Use the ⬇ Excel button on each row to download individually, or select multiple rows to download/delete in bulk.`;
   DOM.formFields.appendChild(info);
 
-  // Hide submit / clear / delete-all (they need an active form)
+  // Render the control panel with the 3 premium bulk buttons
+  const actionsDiv = document.createElement("div");
+  actionsDiv.id = "allRecordsActions";
+  actionsDiv.style.cssText = "display:flex; flex-wrap:wrap; gap:14px; margin-bottom:40px; padding:20px; background:var(--light-gray); border-radius:8px;";
+  actionsDiv.innerHTML = `
+    <button class="btn btn-clear" id="selectAllBtn" style="flex: 1; min-width: 150px;">Select All</button>
+    <button class="btn btn-download" id="downloadSelectedBtn" style="flex: 1; min-width: 150px; opacity: 0.5; cursor: not-allowed;" disabled>Download Selected</button>
+    <button class="btn btn-delete" id="deleteSelectedBtn" style="flex: 1; min-width: 150px; opacity: 0.5; cursor: not-allowed;" disabled>Delete Selected</button>
+  `;
+  DOM.formFields.appendChild(actionsDiv);
+
+  // Bind bulk button events
+  actionsDiv.querySelector("#selectAllBtn").onclick = function () {
+    const allSelected = records.length > 0 && records.every((_, idx) => selectedRecordIndices.has(idx));
+    if (allSelected) {
+      selectedRecordIndices.clear();
+    } else {
+      records.forEach((_, idx) => selectedRecordIndices.add(idx));
+    }
+    updateRecordsDisplay();
+    updateAllRecordsButtonsState();
+  };
+
+  actionsDiv.querySelector("#downloadSelectedBtn").onclick = function () {
+    if (selectedRecordIndices.size === 0) return;
+    downloadSelectedRecords();
+  };
+
+  actionsDiv.querySelector("#deleteSelectedBtn").onclick = function () {
+    if (selectedRecordIndices.size === 0) return;
+    deleteSelectedRecords();
+  };
+
+  // Hide submit / clear / download / delete-all (they need an active form)
   DOM.submitBtn.style.display = "none";
   DOM.clearBtn.style.display = "none";
+  DOM.downloadBtn.style.display = "none";
   DOM.deleteAllBtn.style.display = "none";
 
   updateRecordsDisplay();
+  document.body.classList.add("form-active");
   DOM.selectorMode.classList.add("hidden");
   DOM.formMode.classList.remove("hidden");
+}
+
+function updateAllRecordsButtonsState() {
+  const selectBtn = document.getElementById("selectAllBtn");
+  const dlBtn = document.getElementById("downloadSelectedBtn");
+  const delBtn = document.getElementById("deleteSelectedBtn");
+
+  if (!dlBtn || !delBtn) return;
+
+  const hasSelection = selectedRecordIndices.size > 0;
+  dlBtn.disabled = !hasSelection;
+  delBtn.disabled = !hasSelection;
+
+  dlBtn.style.opacity = hasSelection ? "1" : "0.5";
+  dlBtn.style.cursor = hasSelection ? "pointer" : "not-allowed";
+  delBtn.style.opacity = hasSelection ? "1" : "0.5";
+  delBtn.style.cursor = hasSelection ? "pointer" : "not-allowed";
+
+  if (selectBtn) {
+    const allSelected = records.length > 0 && records.every((_, idx) => selectedRecordIndices.has(idx));
+    selectBtn.textContent = allSelected ? "Deselect All" : "Select All";
+  }
+}
+
+async function ensureConfigsLoaded(formKeys) {
+  const uniqueKeys = Array.from(new Set(formKeys));
+  const promises = uniqueKeys.map(key => {
+    if (window.FORM_CONFIGS && window.FORM_CONFIGS[key]) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      const path = (typeof TEMPLATE_CONFIG_MAP !== "undefined") ? TEMPLATE_CONFIG_MAP[key] : null;
+      if (!path) {
+        resolve();
+        return;
+      }
+      const s = document.createElement("script");
+      s.src = path + "?v=" + Date.now();
+      s.onload = () => resolve();
+      s.onerror = () => resolve();
+      document.head.appendChild(s);
+    });
+  });
+  await Promise.all(promises);
+}
+
+async function downloadSelectedRecords() {
+  if (selectedRecordIndices.size === 0) { toast("⚠️ No records selected."); return; }
+
+  const selectedList = Array.from(selectedRecordIndices).map(idx => records[idx]);
+  selectedList.sort((a, b) => records.indexOf(a) - records.indexOf(b));
+
+  const keysToLoad = [];
+  selectedList.forEach(r => { if (r.FormKey) keysToLoad.push(r.FormKey); });
+  await ensureConfigsLoaded(keysToLoad);
+
+  const rows = selectedList.map(r => recordToRowForKey(r, r.FormKey));
+  const filename = `SelectedForms_${new Date().toISOString().slice(0, 10)}.xlsx`;
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const colCount = rows.length > 0 ? Object.keys(rows[0]).length : 20;
+  ws["!cols"] = Array.from({ length: colCount }, () => ({ wch: 20 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Survey");
+  XLSX.writeFile(wb, filename);
+
+  toast(`✅ Download started — ${rows.length} selected record(s) exported.`, 4500);
+}
+
+function deleteSelectedRecords() {
+  if (selectedRecordIndices.size === 0) { toast("⚠️ No records selected."); return; }
+
+  showModal({
+    title: "Delete Selected Records",
+    body: `Are you sure you want to delete the <strong>${selectedRecordIndices.size}</strong> selected record(s)? This cannot be undone.`,
+    okLabel: "Delete Selected",
+    cancelLabel: "Cancel",
+    onOk: () => {
+      const sortedIndices = Array.from(selectedRecordIndices).sort((a, b) => b - a);
+      sortedIndices.forEach(idx => {
+        records.splice(idx, 1);
+      });
+      selectedRecordIndices.clear();
+      saveStoredRecords();
+      updateRecordsDisplay();
+      updateAllRecordsButtonsState();
+      toast("🗑️ Selected records deleted.");
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════
@@ -475,16 +645,12 @@ function mkCheckbox(title, key, opts, desc, max) {
 
     cb.addEventListener("change", function () {
       if (this.checked) {
-        if (!formData[key].includes(opt)) {
-    formData[key].push(opt);
-
-    formData[key].sort((a, b) =>
-        a.toString().localeCompare(b.toString(), undefined, {
-            numeric: true,
-            sensitivity: "base"
-        })
-    );
-}
+        if (max && (formData[key] || []).length >= max) {
+          alert(`You can select at most ${max} options for ${title}.`);
+          this.checked = false;
+          return;
+        }
+        if (!formData[key].includes(opt)) formData[key].push(opt);
         cbLbl.classList.add("sel");
       } else {
         formData[key] = formData[key].filter(v => v !== opt);
@@ -585,16 +751,7 @@ function mkRadio(title, key, opts, label) {
         }
       } else {
         if (this.checked) {
-          if (!formData[key].includes(cbVal)) {
-    formData[key].push(cbVal);
-
-    formData[key].sort((a, b) =>
-        a.toString().localeCompare(b.toString(), undefined, {
-            numeric: true,
-            sensitivity: "base"
-        })
-    );
-}
+          if (!formData[key].includes(cbVal)) formData[key].push(cbVal);
           cbLbl.classList.add("sel");
         } else {
           formData[key] = formData[key].filter(v => v !== cbVal);
@@ -899,9 +1056,31 @@ function saveStoredRecords() {
 }
 
 // ═══════════════════════════════════════════════
+// DYNAMIC DASHBOARD STATS
+// ═══════════════════════════════════════════════
+function updateDashboardStats() {
+  const totalEl = document.getElementById("statTotalSurveys");
+  const completedEl = document.getElementById("statCompletedSurveys");
+  const pendingEl = document.getElementById("statPendingSurveys");
+  const rateEl = document.getElementById("statResponseRate");
+  if (!totalEl || !completedEl || !pendingEl || !rateEl) return;
+
+  const completedCount = records.length;
+  const targetSurveys = Math.max(152, completedCount + 18);
+  const pendingCount = Math.max(0, targetSurveys - completedCount);
+  const responseRate = Math.round((completedCount / targetSurveys) * 100);
+
+  completedEl.textContent = completedCount;
+  pendingEl.textContent = pendingCount;
+  totalEl.textContent = targetSurveys;
+  rateEl.textContent = `${responseRate}%`;
+}
+
+// ═══════════════════════════════════════════════
 // RECORDS TABLE  (Fix #2 — adds per-row Download btn)
 // ═══════════════════════════════════════════════
 function updateRecordsDisplay() {
+  updateDashboardStats();
   if (!DOM.recordTableBody) return;
 
   // MAIN CONDITION: filter strictly by FormKey (exact form name like "ART", "BPA")
@@ -911,42 +1090,126 @@ function updateRecordsDisplay() {
     filteredRecords = records.filter(r => r.FormKey === currentFormType);
   }
 
+  const thead = DOM.recordTableBody.closest("table").querySelector("thead tr");
+
   if (!filteredRecords.length) {
+    const colspanCount = !currentFormType ? 5 : 6;
     DOM.recordTableBody.innerHTML =
-      `<tr><td colspan="6" class="empty-record">No records yet.</td></tr>`;
+      `<tr><td colspan="${colspanCount}" class="empty-record">No records yet.</td></tr>`;
+    if (thead) {
+      if (!currentFormType) {
+        thead.innerHTML = "<th><input type='checkbox' id='headerSelectAll'></th><th>#</th><th>EVID</th><th>Form</th><th>Survey Type</th>";
+      } else {
+        thead.innerHTML = "<th>#</th><th>EVID</th><th>Form</th><th>Survey Type</th><th>Download</th><th>Actions</th>";
+      }
+    }
     return;
   }
 
-  // Update header to include Download column
-  const thead = DOM.recordTableBody.closest("table").querySelector("thead tr");
-  if (thead && thead.children.length === 5) {
-    thead.innerHTML = "<th>#</th><th>EVID</th><th>Form</th><th>Survey Type</th><th>Download</th><th>Actions</th>";
+  // Update header to include Checkbox column for All Stored Records view
+  if (thead) {
+    if (!currentFormType) {
+      thead.innerHTML = "<th><input type='checkbox' id='headerSelectAll'></th><th>#</th><th>EVID</th><th>Form</th><th>Survey Type</th>";
+    } else {
+      thead.innerHTML = "<th>#</th><th>EVID</th><th>Form</th><th>Survey Type</th><th>Download</th><th>Actions</th>";
+    }
   }
 
   DOM.recordTableBody.innerHTML = filteredRecords.map((r, i) => {
     const actualIndex = records.indexOf(r);
-    return `
-    <tr>
-      <td>${i + 1}</td>
-      <td>${r.EVID || "-"}</td>
-      <td>${r.Form || "-"}</td>
-      <td>${r.SurveyType || "-"}</td>
-      <td>
-        <button class="action-btn dl-btn" onclick="downloadExcel(${actualIndex})"
-          title="Download this entry as Excel">⬇ Excel</button>
-      </td>
-      <td>
-        <button class="action-btn" onclick="editRec(${actualIndex})">Edit</button>
-        <button class="action-btn delete" onclick="delRec(${actualIndex})">Delete</button>
-      </td>
-    </tr>`;
+
+    if (!currentFormType) {
+      const isSelected = selectedRecordIndices.has(actualIndex);
+      return `
+      <tr>
+        <td><input type="checkbox" class="record-select-cb" data-index="${actualIndex}" ${isSelected ? "checked" : ""}></td>
+        <td>${i + 1}</td>
+        <td>${r.EVID || "-"}</td>
+        <td>${r.Form || "-"}</td>
+        <td>${r.SurveyType || "-"}</td>
+      </tr>`;
+    } else {
+      return `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${r.EVID || "-"}</td>
+        <td>${r.Form || "-"}</td>
+        <td>${r.SurveyType || "-"}</td>
+        <td>
+          <button class="action-btn dl-btn" onclick="downloadExcel(${actualIndex})"
+            title="Download this entry as Excel">⬇ Excel</button>
+        </td>
+        <td>
+          <button class="action-btn" onclick="editRec(${actualIndex})">Edit</button>
+          <button class="action-btn delete" onclick="delRec(${actualIndex})">Delete</button>
+        </td>
+      </tr>`;
+    }
   }).join("");
+
+  // Bind checkbox events for All Stored Records view
+  if (!currentFormType) {
+    const headerSelectAll = document.getElementById("headerSelectAll");
+    if (headerSelectAll) {
+      const allSelected = filteredRecords.every(r => selectedRecordIndices.has(records.indexOf(r)));
+      headerSelectAll.checked = allSelected && filteredRecords.length > 0;
+
+      headerSelectAll.onchange = function () {
+        if (this.checked) {
+          filteredRecords.forEach(r => selectedRecordIndices.add(records.indexOf(r)));
+        } else {
+          filteredRecords.forEach(r => selectedRecordIndices.delete(records.indexOf(r)));
+        }
+        updateRecordsDisplay();
+        updateAllRecordsButtonsState();
+      };
+    }
+
+    DOM.recordTableBody.querySelectorAll(".record-select-cb").forEach(cb => {
+      cb.onchange = function () {
+        const idx = parseInt(this.dataset.index, 10);
+        if (this.checked) {
+          selectedRecordIndices.add(idx);
+        } else {
+          selectedRecordIndices.delete(idx);
+        }
+
+        const headerCB = document.getElementById("headerSelectAll");
+        if (headerCB) {
+          const allSelected = filteredRecords.every(r => selectedRecordIndices.has(records.indexOf(r)));
+          headerCB.checked = allSelected;
+        }
+        updateAllRecordsButtonsState();
+      };
+    });
+  }
 }
 
 window.editRec = function (i) {
   formData = JSON.parse(JSON.stringify(records[i]));
   editIndex = i;
+
+  // Set the form key and adjust view to the form type loaded
+  const key = records[i].FormKey;
+  if (key) {
+    currentFormType = key;
+    const cfg = getFormConfig(key);
+    DOM.formTitle.textContent = cfg.displayName;
+    DOM.formSubtitle.textContent = "2027 Academic Year Response Survey";
+
+    // Restore standard form actions, hide bulk actions container
+    DOM.submitBtn.style.display = "";
+    DOM.clearBtn.style.display = "";
+    DOM.downloadBtn.style.display = "";
+    DOM.deleteAllBtn.style.display = "";
+
+    if (DOM.formTypeSelect) {
+      DOM.formTypeSelect.value = key;
+    }
+  }
+
   renderForm();
+  updateRecordsDisplay();
 };
 
 window.delRec = function (i) {
@@ -957,8 +1220,21 @@ window.delRec = function (i) {
     cancelLabel: "Cancel",
     onOk: () => {
       records.splice(i, 1);
+
+      // Reconstruct selectedRecordIndices to align shifted indices
+      const newSelected = new Set();
+      selectedRecordIndices.forEach(idx => {
+        if (idx < i) {
+          newSelected.add(idx);
+        } else if (idx > i) {
+          newSelected.add(idx - 1);
+        }
+      });
+      selectedRecordIndices = newSelected;
+
       saveStoredRecords();
       updateRecordsDisplay();
+      updateAllRecordsButtonsState();
       toast("🗑️ Record deleted.");
     }
   });
@@ -1072,27 +1348,8 @@ function recordToRow(rec) {
     let v = (rawKey !== undefined) ? rec[rawKey] : rec[header];
     if (v === undefined || v === null) v = "";
     if (Array.isArray(v)) {
-
-    let sortedValues = [...v].sort((a, b) =>
-        a.toString().localeCompare(b.toString(), undefined, {
-            numeric: true,
-            sensitivity: "base"
-        })
-    );
-
-      const qNumber = parseInt(header.replace("Q", ""), 10);
-    // Q8 = first 3 options
-    if (header === "Q8") {
-        sortedValues = sortedValues.slice(0, 3);
+      v = [...v].sort().join("");
     }
-
-    // Q9 = first 5 options
-    if (header === "Q9") {
-        sortedValues = sortedValues.slice(0, 5);
-    }
-
-    v = sortedValues.join(",");
-}
     ordered.push([header, v]);
   };
 
@@ -1101,10 +1358,7 @@ function recordToRow(rec) {
     seen.add(h);
     processedKeys.add(rawKey);
     const stored = rec[rawKey];
-    let arr = Array.isArray(stored) ? stored : (stored ? [stored] : []);
-    if (rawKey === "Denom") {
-      arr = [...arr].sort();
-    }
+    const arr = Array.isArray(stored) ? [...stored].sort() : (stored ? [stored] : []);
     for (let i = 1; i <= maxSlots; i++) {
       const col = `${h}_${prefix}${i}`;
       if (seen.has(col)) return;
@@ -1166,16 +1420,7 @@ function recordToRow(rec) {
     });
   }
 
-  // 3. Any remaining keys in the record that weren't covered above
-  Object.keys(rec).forEach(key => {
-    if (FIXED_HEADERS[key]) return;
-    if (SKIP_KEYS.has(key)) return;
-    if (processedKeys.has(key)) return;        // already split/emitted in step 2
-    if (key === "FormKey") return; // skip email for ACTFL-27
-    const header = _questionKeyToHeader[key] || key;
-    addCol(header, key);
-  });
-
+  // 3. Removed remaining keys check to prevent unused fields from appearing in export
 
   // Convert ordered pairs → plain object (preserves insertion order in V8)
   const row = {};
@@ -1183,11 +1428,27 @@ function recordToRow(rec) {
   return row;
 }
 
-function downloadExcel(recordIndex) {
+async function downloadExcel(recordIndex) {
   // Always read from the persisted records array — never from unsaved formData
+  let isSingle = (recordIndex !== null && recordIndex !== undefined);
+  const keysToLoad = [];
+
+  if (isSingle) {
+    const rec = records[recordIndex];
+    if (rec && rec.FormKey) keysToLoad.push(rec.FormKey);
+  } else {
+    if (currentFormType) {
+      keysToLoad.push(currentFormType);
+    } else {
+      records.forEach(r => { if (r.FormKey) keysToLoad.push(r.FormKey); });
+    }
+  }
+
+  // Ensure all required configs are loaded before exporting
+  await ensureConfigsLoaded(keysToLoad);
+
   let rows;
   let filename;
-  let isSingle = (recordIndex !== null && recordIndex !== undefined);
 
   if (isSingle) {
     // Per-entry download

@@ -74,7 +74,7 @@ window.OPTS = {
 //   { qNum, label, key, type, opts, max? }
 //   type: "checkbox" | "radio" | "state" | "stateTriple" | "collegeVisits" | "majorGrid" | "denomGrid"
 
-const FORM_CONFIGS = {
+window.FORM_CONFIGS = {
 
   // ── ART (HU) ── Q nums: 1-4 partner, 5-17, 19 ────────────────────────────
   ART: {
@@ -106,7 +106,7 @@ const FORM_CONFIGS = {
 };
 
 // ─── Default form data ────────────────────────────────────────────────────────
-function createDefaultFormData(surveyType) {
+window.createDefaultFormData = function (surveyType) {
   return {
     SurveyYear: "2027", SurveyType: surveyType,
     EVID: "", Form: "",
@@ -118,12 +118,13 @@ function createDefaultFormData(surveyType) {
     DeclaredName3: "", DeclaredState3: "", DeclaredVisit3: "",
     DeclaredName4: "", DeclaredState4: "", DeclaredVisit4: "",
     DeclaredName5: "", DeclaredState5: "", DeclaredVisit5: "",
-    Major: [], Denom: [],
+    Major1: "", Major2: "", Major3: "",
+    Denom1: "", Denom2: "",
     SensitiveOptin: "",
     PartnerDefinedFieldFour: [], PartnerDefinedFieldFive: [],
     PartnerDefinedFieldFive_Performing: [], PartnerDefinedFieldFive_Visual: [],
     PartnerDefinedFieldSix: [], PartnerDefinedFieldSeven: []
   };
-}
+};
 
-function getFormConfig(t) { return FORM_CONFIGS[t] || FORM_CONFIGS.DECA; }
+window.getFormConfig = function (t) { return FORM_CONFIGS[t] || FORM_CONFIGS.DECA; };
