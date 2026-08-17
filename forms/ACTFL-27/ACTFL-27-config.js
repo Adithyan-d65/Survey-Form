@@ -1,11 +1,11 @@
 // ACTFL-27-config.js — Survey Form System 2027
 
 window.US_STATES = [
-  "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
-  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
-  "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
-  "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
-  "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
+  "AL", "AK", "AS", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "GU",
+  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN",
+  "MS", "MO", "MT", "MP", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH",
+  "OK", "OR", "PA", "PR", "RI", "SC", "SD", "TN", "TX", "VI", "UT", "VT", "VA",
+  "WA", "WV", "WI", "WY"
 ];
 
 window.OPTS = {
@@ -40,7 +40,7 @@ window.OPTS = {
 window.FORM_CONFIGS = {
   ACTFL: {
     displayName: "ACTFL-27",
-    surveyType: "ACTFL",
+    surveyType: "SK",
     questions: [
       { key: "PartnerDefinedFieldFour", type: "checkbox", opts: OPTS.ACTFL_P1, label: "Please indicate in which grade level(s) you have studied foreign/world language in school. (Darken as many as apply)" },
       { key: "PartnerDefinedFieldFive", type: "radio", opts: OPTS.ACTFL_P2, label: "How likely are you to continue your foreign/world language studies in college? (Darken ONE)" },
@@ -48,33 +48,19 @@ window.FORM_CONFIGS = {
       { key: "PartnerDefinedFieldSeven", type: "radio", opts: OPTS.ACTFL_P4, label: "How important do you believe your foreign/world language study will be in your future career? (Darken ONE)" },
       { key: "PartnerDefinedFieldEight", type: "checkbox", opts: OPTS.ACTFL_P5, label: "Which of the following languages are you currently studying? (Darken as many as apply)" },
       { key: "PartnerDefinedFieldNine", type: "radio", opts: OPTS.ACTFL_P6, label: "Are you familiar with the Seal of Biliteracy and its potential value to you? (Darken ONE)" },
-
       { key: "CType", type: "checkbox", opts: OPTS.CTYPE, label: "If costs were not a factor, which of the following options would you be interested in after high school? (Darken as many as apply)" },
-
       { key: "ParentCol", type: "radio", opts: OPTS.AB, label: "Have either of your parents/guardians completed college? A. Yes  B. No" },
-
       { key: "HSPrep", type: "checkbox", opts: OPTS.HSPREP, label: "Please identify the types of high school courses you have taken/are currently taking/will take. (Darken as many as apply)" },
-
       { key: "Applicare", type: "checkbox", opts: OPTS.APPLICARE, label: "What are the top three things you care about the most when applying to a college or university? (Darken up to THREE)" },
-
       { key: "LearnExp", type: "checkbox", opts: OPTS.LEARNEXP, label: "What are the top five experiences you expect to learn the most from during college? (Darken up to FIVE)" },
-
       { key: "ColChar", type: "checkbox", opts: OPTS.COLCHAR, label: "Build Your Ideal College: Please darken all characteristics that you are looking for in your ideal college. (Darken as many as apply)" },
-
       { key: "Profession", type: "checkbox", opts: OPTS.PROFESSION, label: "Imagine what kind of profession you might choose. Select those you are interested in. (Darken as many as apply)" },
-
       { key: "_stateTriple", type: "stateTriple", labels: ["14A", "14B", "14C"] },
-
       { key: "_collegeVisits", type: "collegeVisits", prefix: "15" },
-
       { key: "_majorGrid", type: "majorGrid" },
-
       { key: "Expect", type: "checkbox", opts: OPTS.EXPECT, label: "Build Your Ideal College — Expect: (Darken up to FIVE)", max: 5 },
-
       { key: "Activity", type: "denomGrid", opts: OPTS.DENOM, label: "If you are interested in faith-based communities on campus or faith-based institutions, which two would you choose? (Darken up to TWO)" },
-
       { key: "Race", type: "checkbox", opts: OPTS.RACE, label: "Which of the following do you identify with? (Darken ONE or more)" },
-
       { key: "SensitiveOptin", type: "radio", opts: OPTS.AB, label: "Encourage consent — by saying yes, you confirm the information is about you. (Darken ONE) A. Yes  B. No" }
     ]
   }
@@ -93,7 +79,7 @@ window.createDefaultFormData = function (surveyType) {
     DeclaredName3: "", DeclaredState3: "", DeclaredVisit3: "",
     DeclaredName4: "", DeclaredState4: "", DeclaredVisit4: "",
     DeclaredName5: "", DeclaredState5: "", DeclaredVisit5: "",
-    Major: [], Denom: [], Expect: [],
+    Major: [], Denom: [], Expect: [], Denom1: "", Denom2: "",
     PartnerDefinedFieldFour: [], PartnerDefinedFieldFive: [],
     PartnerDefinedFieldSix: [], PartnerDefinedFieldSeven: [],
     PartnerDefinedFieldEight: [], PartnerDefinedFieldNine: []

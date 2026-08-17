@@ -545,7 +545,13 @@ function renderForm() {
       case "collegeVisits": mkCollegeVisits(title, q.prefix, q.max); break;
       case "majorGrid": mkButtonGrid(`${title} — Major Preferences`, q.opts || OPTS.MAJOR, "Major"); break;
       case "expectGrid": mkButtonGrid(`${title} — Expect`, q.opts || OPTS.EXPECT, "Expect"); break;
-      case "denomGrid": mkButtonGrid(`${title} — Additional Preferences`, q.opts || OPTS.DENOM, "Denom"); break;
+      case "denomGrid":
+        if (currentFormType === "MCO" || currentFormType === "ACTFL") {
+          mkSplitDenomGrid(title, q.opts || OPTS.DENOM);
+        } else {
+          mkButtonGrid(`${title} — Additional Preferences`, q.opts || OPTS.DENOM, "Denom");
+        }
+        break;
       case "text": mkTextInput(title, q.key, q.label); break;
     }
   });
@@ -972,6 +978,78 @@ function mkButtonGrid(title, opts, arrayKey) {
   DOM.formFields.appendChild(wrap);
 }
 
+function mkSplitDenomGrid(title, opts) {
+  // 14 A Grid
+  const wrapA = document.createElement("div");
+  wrapA.className = "field-group";
+
+  const labelA = document.createElement("label");
+  labelA.className = "field-label";
+  labelA.textContent = `${title} A — Additional Preferences`;
+
+  const gridA = document.createElement("div");
+  gridA.className = "button-grid";
+
+  opts.forEach(v => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "major-btn";
+    btn.textContent = v;
+    if (formData["Denom1"] === v) btn.classList.add("active");
+
+    btn.addEventListener("click", () => {
+      if (formData["Denom1"] === v) {
+        formData["Denom1"] = "";
+        btn.classList.remove("active");
+      } else {
+        formData["Denom1"] = v;
+        gridA.querySelectorAll(".major-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      }
+      updateRecordsDisplay();
+    });
+    gridA.appendChild(btn);
+  });
+
+  wrapA.append(labelA, gridA);
+  DOM.formFields.appendChild(wrapA);
+
+  // 14 B Grid
+  const wrapB = document.createElement("div");
+  wrapB.className = "field-group";
+
+  const labelB = document.createElement("label");
+  labelB.className = "field-label";
+  labelB.textContent = `${title} B — Additional Preferences`;
+
+  const gridB = document.createElement("div");
+  gridB.className = "button-grid";
+
+  opts.forEach(v => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "major-btn";
+    btn.textContent = v;
+    if (formData["Denom2"] === v) btn.classList.add("active");
+
+    btn.addEventListener("click", () => {
+      if (formData["Denom2"] === v) {
+        formData["Denom2"] = "";
+        btn.classList.remove("active");
+      } else {
+        formData["Denom2"] = v;
+        gridB.querySelectorAll(".major-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      }
+      updateRecordsDisplay();
+    });
+    gridB.appendChild(btn);
+  });
+
+  wrapB.append(labelB, gridB);
+  DOM.formFields.appendChild(wrapB);
+}
+
 // ═══════════════════════════════════════════════
 // SUBMIT  — saves record THEN exports it
 // ═══════════════════════════════════════════════
@@ -1289,8 +1367,13 @@ function buildQuestionHeaderMap() {
       _questionKeyToHeader["Expect"] = `${header}_Expect`;
     }
     if (q.type === "denomGrid") {
-      _questionKeyToHeader["Denom1"] = `${header}_Denom1`;
-      _questionKeyToHeader["Denom2"] = `${header}_Denom2`;
+      if (currentFormType === "MCO" || currentFormType === "ACTFL") {
+        _questionKeyToHeader["Denom1"] = `${header}A`;
+        _questionKeyToHeader["Denom2"] = `${header}B`;
+      } else {
+        _questionKeyToHeader["Denom1"] = `${header}_Denom1`;
+        _questionKeyToHeader["Denom2"] = `${header}_Denom2`;
+      }
     }
     if (q.type === "artGrid") {
       _questionKeyToHeader[`${q.key}_Performing`] = `${header}_Performing`;
@@ -1355,12 +1438,12 @@ function recordToRow(rec) {
 
   // Grid split: emit numbered slots (Major1/Major2… Expect1… Denom1/Denom2)
   const addSlottedCols = (h, rawKey, prefix, maxSlots) => {
-    seen.add(h);
+    if (h) seen.add(h);
     processedKeys.add(rawKey);
     const stored = rec[rawKey];
     const arr = Array.isArray(stored) ? [...stored].sort() : (stored ? [stored] : []);
     for (let i = 1; i <= maxSlots; i++) {
-      const col = `${h}_${prefix}${i}`;
+      const col = h ? `${h}_${prefix}${i}` : `${prefix}${i}`;
       if (seen.has(col)) return;
       seen.add(col);
       ordered.push([col, arr[i - 1] !== undefined ? arr[i - 1] : ""]);
@@ -1405,7 +1488,12 @@ function recordToRow(rec) {
         addSlottedCols(h, "Expect", "Expect", 5);
 
       } else if (q.type === "denomGrid") {
-        addSlottedCols(h, "Denom", "Denom", 2);
+        if (currentFormType === "MCO" || currentFormType === "ACTFL") {
+          addCol(`${h}A`, "Denom1");
+          addCol(`${h}B`, "Denom2");
+        } else {
+          addSlottedCols(h, "Denom", "Denom", 2);
+        }
 
       } else if (q.type === "artGrid") {
         addCol(`${h}_Performing`, `${q.key}_Perf`);

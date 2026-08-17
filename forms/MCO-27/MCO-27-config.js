@@ -9,11 +9,11 @@
 
 // ─── US States ────────────────────────────────────────────────────────────────
 window.US_STATES = [
-  "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
-  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
-  "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
-  "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
-  "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
+  "AL", "AK", "AS", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "GU",
+  "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN",
+  "MS", "MO", "MT", "MP", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH",
+  "OK", "OR", "PA", "PR", "RI", "SC", "SD", "TN", "TX", "VI", "UT", "VT", "VA",
+  "WA", "WV", "WI", "WY"
 ];
 
 // ─── Shared option sets ───────────────────────────────────────────────────────
@@ -91,10 +91,10 @@ window.FORM_CONFIGS = {
       { qNum: "8", key: "Profession", type: "checkbox", opts: OPTS.PROFESSION, label: "(All that apply)" },
       { qNum: "9", key: "_stateTriple", type: "stateTriple", labels: ["9A", "9B", "9C"] },
       { qNum: "10", key: "_collegeVisits", type: "collegeVisits", prefix: "10" },
-      { qNum: "11", key: "Activity", type: "checkbox", opts: OPTS.ACTIVITY, label: "(All that apply)" },
+      { qNum: "11", key: "Activity", type: "checkbox", opts: OPTS.ACTIVITY.slice(0, 20), label: "(All that apply)" },
       { qNum: "12", key: "LearnExp", type: "checkbox", opts: OPTS.LEARNEXP, label: "(Up to 5)", max: 5 },
       { qNum: "13", key: "Expect", type: "checkbox", opts: OPTS.EXPECT, label: "Build Your Ideal College — Expect: (Darken up to FIVE)", max: 5 },
-      { qNum: "14", key: "Activity", type: "checkbox", opts: OPTS.ACTIVITY, label: "(All that apply)" },
+      { qNum: "14", key: "_denomGrid", type: "denomGrid", opts: OPTS.ACTIVITY, label: "If you are interested in faith-based communities on campus or faith-based institutions, which two would you choose? (Darken up to TWO)" },
       { qNum: "15", key: "Race", type: "checkbox", opts: OPTS.RACE, label: "(All that apply)" },
       { qNum: "16", key: "_unused" },
       { qNum: "17", key: "SensitiveOptin", type: "radio", opts: OPTS.YN, label: "Do you consent to participate in sensitive surveys? (Y/N)" }
@@ -119,6 +119,7 @@ window.createDefaultFormData = function (surveyType) {
     DeclaredName4: "", DeclaredState4: "", DeclaredVisit4: "",
     DeclaredName5: "", DeclaredState5: "", DeclaredVisit5: "",
     Major: [],
+    Denom1: "", Denom2: "",
     SensitiveOptin: ""
   };
 };
