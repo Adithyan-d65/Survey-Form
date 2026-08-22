@@ -688,10 +688,14 @@ body.form-active .bg-video {
   padding: 12px;
   border-radius: 8px;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 400;
   font-size: 14px;
   transition: all var(--transition);
   color: var(--text-primary);
+}
+
+.major-btn.is-number {
+  font-weight: 600;
 }
 
 .major-btn:hover {

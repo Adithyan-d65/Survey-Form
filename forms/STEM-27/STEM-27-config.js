@@ -98,7 +98,8 @@ window.FORM_CONFIGS = {
       { qNum: "15", key: "_collegeVisits", type: "collegeVisits", prefix: "15" },
       { qNum: "16", key: "_majorGrid", type: "majorGrid", prefix: "16" },
       { qNum: "17", key: "Expect", type: "checkbox", opts: OPTS.EXPECT, label: "Build Your Ideal College — Expect: (Darken up to FIVE)", max: 5 },
-      { qNum: "18", key: "Activity", type: "checkbox", opts: OPTS.ACTIVITY, label: "(All that apply)" },
+      { qNum: "18A", key: "ActivityA", type: "checkbox", opts: OPTS.ACTIVITY, label: "(All that apply)" },
+      { qNum: "18B", key: "ActivityB", type: "checkbox", opts: OPTS.ACTIVITY, label: "(All that apply)" },
       { qNum: "19", key: "Race", type: "checkbox", opts: OPTS.RACE, label: "(All that apply)" },
       { qNum: "21", key: "SensitiveOptin", type: "radio", opts: OPTS.YN, label: "Do you consent to participate in sensitive surveys? (Y/N)" }
     ]
@@ -112,7 +113,7 @@ window.createDefaultFormData = function (surveyType) {
     SurveyYear: "2027", SurveyType: surveyType,
     EVID: "", Form: "",
     CType: [], ParentCol: "", HSPrep: [], Applicare: [], LearnExp: [],
-    ColChar: [], Profession: [], Expect: [], Activity: [], Race: [],
+    ColChar: [], Profession: [], Expect: [], ActivityA: [], ActivityB: [], Race: [],
     DeclaredStateI: "", DeclaredStateII: "", DeclaredStateIII: "",
     DeclaredName1: "", DeclaredState1: "", DeclaredVisit1: "",
     DeclaredName2: "", DeclaredState2: "", DeclaredVisit2: "",

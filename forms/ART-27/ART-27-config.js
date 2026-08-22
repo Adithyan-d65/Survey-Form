@@ -82,7 +82,7 @@ window.FORM_CONFIGS = {
     surveyType: "HU",
     questions: [
       { qNum: "1", key: "PartnerDefinedFieldFour", type: "checkbox", opts: OPTS.ART_P1, label: "Which of the following have you gained as a result of your experiences in art, music, or drama (fine arts) classes/activities? (Darken as many as apply)" },
-      { qNum: "2", key: "PartnerDefinedFieldFive", type: "artGrid", optsPerf: OPTS.ART_P2_PERF, optsVis: OPTS.ART_P2_VIS, label: "What types of fine arts courses are you interested in taking? (Darken as many as apply)" },
+      { qNum: "2", key: "PartnerDefinedFieldFive", type: "checkbox", opts: OPTS.ART_P2, label: "What types of fine arts courses are you interested in taking? (Darken as many as apply)" },
       { qNum: "3", key: "PartnerDefinedFieldSix", type: "radio", opts: OPTS.ART_P3, label: "How much time outside of school do you spend doing fine arts activities? (Darken ONE)" },
       { qNum: "4", key: "PartnerDefinedFieldSeven", type: "radio", opts: OPTS.ART_P3, label: "If time, costs, and availability were not a factor, how much time would you spend doing fine arts activities outside of school? (Darken ONE)" },
       { qNum: "5", key: "CType", type: "checkbox", opts: OPTS.CTYPE, label: "(All that apply)" },
@@ -96,7 +96,8 @@ window.FORM_CONFIGS = {
       { qNum: "13", key: "_collegeVisits", type: "collegeVisits", prefix: "13" },
       { qNum: "14", key: "_majorGrid", type: "majorGrid", prefix: "14" },
       { qNum: "15", key: "Expect", type: "checkbox", opts: OPTS.EXPECT, label: "Build Your Ideal College — Expect: (Darken up to FIVE)", max: 5 },
-      { qNum: "16", key: "Activity", type: "denomGrid", opts: OPTS.DENOM, label: "If you are interested in faith-based communities on campus or faith-based institutions, which two would you choose? (Darken up to TWO)" },
+      { qNum: "16A", key: "ActivityA", type: "checkbox", opts: OPTS.ACTIVITY, label: "If you are interested in faith-based communities on campus or faith-based institutions, which two would you choose? (Darken up to TWO)" },
+      { qNum: "16B", key: "ActivityB", type: "checkbox", opts: OPTS.ACTIVITY, label: "If you are interested in faith-based communities on campus or faith-based institutions, which two would you choose? (Darken up to TWO)" },
       { qNum: "17", key: "Race", type: "checkbox", opts: OPTS.RACE, label: "(All that apply)" },
       { qNum: "19", key: "SensitiveOptin", type: "radio", opts: OPTS.YN, label: "Do you consent to participate in sensitive surveys? (Y/N)" }
     ]
@@ -111,7 +112,7 @@ window.createDefaultFormData = function (surveyType) {
     SurveyYear: "2027", SurveyType: surveyType,
     EVID: "", Form: "",
     CType: [], ParentCol: "", HSPrep: [], Applicare: [], LearnExp: [],
-    ColChar: [], Profession: [], Expect: [], Activity: [], Race: [],
+    ColChar: [], Profession: [], Expect: [], ActivityA: [], ActivityB: [], Race: [],
     DeclaredStateI: "", DeclaredStateII: "", DeclaredStateIII: "",
     DeclaredName1: "", DeclaredState1: "", DeclaredVisit1: "",
     DeclaredName2: "", DeclaredState2: "", DeclaredVisit2: "",
@@ -122,7 +123,6 @@ window.createDefaultFormData = function (surveyType) {
     Denom1: "", Denom2: "",
     SensitiveOptin: "",
     PartnerDefinedFieldFour: [], PartnerDefinedFieldFive: [],
-    PartnerDefinedFieldFive_Performing: [], PartnerDefinedFieldFive_Visual: [],
     PartnerDefinedFieldSix: [], PartnerDefinedFieldSeven: []
   };
 };

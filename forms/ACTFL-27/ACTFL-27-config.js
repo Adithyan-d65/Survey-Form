@@ -61,7 +61,7 @@ window.FORM_CONFIGS = {
       { key: "Expect", type: "checkbox", opts: OPTS.EXPECT, label: "Build Your Ideal College — Expect: (Darken up to FIVE)", max: 5 },
       { key: "Activity", type: "denomGrid", opts: OPTS.DENOM, label: "If you are interested in faith-based communities on campus or faith-based institutions, which two would you choose? (Darken up to TWO)" },
       { key: "Race", type: "checkbox", opts: OPTS.RACE, label: "Which of the following do you identify with? (Darken ONE or more)" },
-      { key: "SensitiveOptin", type: "radio", opts: OPTS.AB, label: "Encourage consent — by saying yes, you confirm the information is about you. (Darken ONE) A. Yes  B. No" }
+      { qNum: "21", key: "SensitiveOptin", type: "radio", opts: OPTS.YN, label: "Encourage consent — by saying yes, you confirm the information is about you. (Darken ONE) Y. Yes  N. No" }
     ]
   }
 };

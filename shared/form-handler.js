@@ -958,7 +958,10 @@ function mkButtonGrid(title, opts, arrayKey) {
 
   opts.forEach(v => {
     const btn = document.createElement("button");
-    btn.type = "button"; btn.className = "major-btn"; btn.textContent = v;
+    btn.type = "button"; 
+    btn.className = "major-btn"; 
+    if (arrayKey === "Major" || !isNaN(v)) btn.classList.add("is-number");
+    btn.textContent = v;
     if (formData[arrayKey].includes(v)) btn.classList.add("active");
     btn.addEventListener("click", () => {
       if (!Array.isArray(formData[arrayKey])) formData[arrayKey] = [];
